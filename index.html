@@ -522,5 +522,29 @@ function cont(){if(load()){closeUI();$('#ui').style.background='';goLobby()}}
 cv.addEventListener('pointerdown',()=>{if(G=='intro')KP.e=1});
 function loop(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;update(dt);draw();for(const k in KP)delete KP[k];requestAnimationFrame(loop)}
 titleMenu();requestAnimationFrame(loop);
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('Service worker registration failed:', err))); }
+if ('serviceWorker' in navigator) {
+  // Keep saves in localStorage; never clear site data when updating the game.
+  const hadController = !!navigator.serviceWorker.controller;
+  let updatePromptShown = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // Ask before reloading an already-running game, so the player can finish safely.
+    if (hadController && !updatePromptShown) {
+      updatePromptShown = true;
+      if (window.confirm('A new version of Black Boy Go! is ready. Reload now? Your saved game will be kept.')) {
+        window.location.reload();
+      }
+    }
+  });
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' });
+      registration.update().catch(() => {});
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') registration.update().catch(() => {});
+      });
+    } catch (err) {
+      console.warn('Service worker registration failed:', err);
+    }
+  });
+}
 </script></body></html>
