@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "Black Boy Go!",
+  "short_name": "Black Boy Go!",
+  "description": "Black Boy Go! HTML5 game",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1d1b2e",
+  "theme_color": "#1d1b2e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
