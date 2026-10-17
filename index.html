@@ -437,8 +437,25 @@ class BBGPeerRoom{
  _syncPeers(){this.peersList=[this.local,...Array.from(this.peerData.values())];if(this.peersChanged)this.peersChanged();if(this.host)this._broadcast({__bbg:'state',peers:this._snapshot(),hostPresence:this.local.presence});}
  _broadcast(msg,except){for(const [id,conn] of this.peerConns){if(id===except)continue;try{if(conn.open)conn.send(msg)}catch(e){}}}
  _receive(from,msg){if(!msg)return;if(msg.__bbg==='hello'){return}
-  if(msg.__bbg==='presence'){const p=this.peerData.get(from);if(p)p.presence=msg.data||{};this._syncPeers();return}
-  if(msg.__bbg==='state'&&!this.host){const old=new Map(this.peersList.map(p=>[p.peer,p]));const host=old.get(msg.host)||{peer:msg.host||'host',isMe:false,sameTab:false,presence:{}};host.presence=msg.hostPresence||host.presence;const list=[this.local,host];(msg.peers||[]).forEach(q=>{if(q.peer!==this.peer.id&&q.peer!==host.peer)list.push({...old.get(q.peer),...q,isMe:false,sameTab:false})});this.peersList=list;if(this.peersChanged)this.peersChanged();return}
+  if(msg.__bbg==='presence'){
+   const p=this.peerData.get(from);if(p)p.presence=msg.data||{};
+   // Presence changes (position/HP/nickname) are frequent: update data without
+   // rebuilding the portal, which would make its buttons flicker and lose clicks.
+   if(this.host)this._broadcast({__bbg:'state',peers:this._snapshot(),hostPresence:this.local.presence});
+   return
+  }
+  if(msg.__bbg==='state'&&!this.host){
+   const old=new Map(this.peersList.map(p=>[p.peer,p]));
+   const before=this.peersList.map(p=>p.peer).join('|');
+   const host=old.get(msg.host)||{peer:msg.host||'host',isMe:false,sameTab:false,presence:{}};
+   host.presence=msg.hostPresence||host.presence;
+   const list=[this.local,host];
+   (msg.peers||[]).forEach(q=>{if(q.peer!==this.peer.id&&q.peer!==host.peer)list.push({...old.get(q.peer),...q,isMe:false,sameTab:false})});
+   this.peersList=list;
+   const after=list.map(p=>p.peer).join('|');
+   if(before!==after&&this.peersChanged)this.peersChanged();
+   return
+  }
   if(msg.__bbg==='event'){const m={isMe:false,data:msg.data};(this.events[msg.name]||[]).forEach(fn=>fn(m));if(this.host)this._broadcast(msg,from);return}
  }
  on(name,fn){(this.events[name]||(this.events[name]=[])).push(fn)}
