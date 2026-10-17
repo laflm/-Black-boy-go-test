@@ -658,7 +658,8 @@ cv.addEventListener('pointerdown',()=>{if(G=='intro')KP.e=1});
 function loop(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;update(dt);draw();for(const k in KP)delete KP[k];requestAnimationFrame(loop)}
 try{document.fonts.load('20px Anton');document.fonts.load("bold 15px 'Comic Neue'")}catch(e){}
 titleMenu();requestAnimationFrame(loop);
-</script>\n<script>
+</script>
+<script>
 // Black Boy Go! PWA update handling. Does not clear localStorage or game saves.
 if ('serviceWorker' in navigator) {
   let acceptedUpdate = false;
