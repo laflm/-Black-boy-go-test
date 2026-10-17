@@ -21,7 +21,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:
 button{font:inherit;background:#fd3;border:3px solid #000;border-radius:10px;padding:5px 10px;margin:2px;color:#000;cursor:pointer}
 button.x{background:#f88}input{font:inherit;background:#fff;border:3px solid #000;border-radius:8px;padding:4px 6px;color:#000}.nav{position:sticky;top:0;z-index:10}
 @keyframes pop{from{transform:translateY(8px);opacity:.4}to{transform:none;opacity:1}}@keyframes grow{from{width:0}}@keyframes fade{from{opacity:0}}
-.p{animation:pop .18s ease-out}.p.nav{animation:none}button{transition:transform .1s,filter .1s}button:hover:not(:disabled){transform:translateY(-2px) scale(1.05);filter:brightness(1.12)}button:active:not(:disabled){transform:scale(.94)}
+.p{animation:none}.p.nav{animation:none}button{transition:transform .1s,filter .1s}button:hover:not(:disabled){transform:translateY(-2px) scale(1.05);filter:brightness(1.12)}button:active:not(:disabled){transform:scale(.94)}
 .row:hover{background:#ffffff14;border-radius:6px}.bar{height:8px;background:#0007;border-radius:4px;overflow:hidden;margin-top:3px}.bar i{display:block;height:100%;background:linear-gradient(#fe9,#f90);animation:grow .6s ease-out}
 .r1{color:#fff}.r2{color:#7cf}.r3{color:#d9f}.r4{color:#fb3;text-shadow:0 0 6px #f90}.tip:hover::after{animation:fade .15s}h3{border-bottom:2px solid #fd3;padding-bottom:3px;font-family:Anton,Impact,'Arial Black',sans-serif;letter-spacing:.5px;font-weight:400}.info{cursor:pointer;margin-left:4px;color:#8cf}.stk{position:sticky;top:var(--nh,76px);align-self:flex-start}.chips{position:sticky;top:var(--nh,64px);z-index:9;background:var(--pn);padding:6px 4px;border-radius:8px}.nav button{font-family:Anton,Impact,'Arial Black',sans-serif;letter-spacing:.5px;font-weight:400}.br{display:flex;align-items:center}.ch{display:flex;flex-direction:column;border-left:3px solid #fd3;margin-left:14px;padding-left:12px}.tn{flex:none;width:158px}@media(max-width:600px){.stk{position:static}}.tip{position:relative}.tip:hover::after{content:attr(data-t);position:absolute;left:8px;top:100%;z-index:20;background:#000;color:#fff;border:2px solid #fd3;border-radius:8px;padding:6px 8px;width:max-content;max-width:300px;font-size:13px;white-space:pre-line}button:disabled{opacity:.4}
 #tc{position:absolute;inset:auto 0 8px 0;display:none;pointer-events:none;z-index:4}
@@ -472,7 +472,7 @@ class BBGPeerRoom{
  presence(data){this.local.presence=data;if(this.host)this._syncPeers();else{for(const conn of this.peerConns.values())if(conn.open)try{conn.send({__bbg:'presence',data})}catch(e){}}return Promise.resolve()}
  async leave(){try{for(const c of this.peerConns.values())c.close()}catch(e){}try{this.peer.destroy()}catch(e){}this.peerConns.clear();this.peerData.clear();this.peersList=[]}
 }
-async function mpRoom(create,code){if(!window.Peer){try{const r=window.claude&&await claude.use('room');if(r)return r}catch(e){}MP.na=1;return null}try{const id='bbg-'+code;const peer=create?new Peer(id):new Peer();await new Promise((resolve,reject)=>{peer.once('open',resolve);peer.once('error',reject)});return {peer,join:async()=>{const room=new BBGPeerRoom(peer,code,!!create);if(!create){const conn=peer.connect(id,{reliable:true});await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Party not found or connection timed out')),10000);conn.once('open',()=>{clearTimeout(timer);room.peerConns.set(id,conn);conn.on('data',msg=>room._receive(id,msg));conn.on('close',()=>{room.peerConns.delete(id)});conn.on('error',()=>{});resolve()});conn.once('error',e=>{clearTimeout(timer);reject(e)})});}return room}}}catch(e){MP.na=2;return null}}
+async function mpRoom(create,code){if(!window.Peer){MP.na=1;return null}try{const id='bbg-'+code;const peer=create?new Peer(id):new Peer();await new Promise((resolve,reject)=>{peer.once('open',resolve);peer.once('error',reject)});return {peer,join:async()=>{const room=new BBGPeerRoom(peer,code,!!create);if(!create){const conn=peer.connect(id,{reliable:true});await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Party not found or connection timed out')),10000);conn.once('open',()=>{clearTimeout(timer);room.peerConns.set(id,conn);conn.on('data',msg=>room._receive(id,msg));conn.on('close',()=>{room.peerConns.delete(id)});conn.on('error',()=>{});resolve()});conn.once('error',e=>{clearTimeout(timer);reject(e)})});}return room}}}catch(e){MP.na=2;return null}}
 async function mpJoin(code,create){const rt=await mpRoom(!!create,code);if(!rt)return false;try{const nr=await rt.join('bbg-'+code);MP.room=nr;MP.code=code;MP.on=1;MP.t0=Date.now();MP.id=Math.random().toString(36).slice(2,10);if(nr.local)nr.local.presence={n:mpName(),t0:MP.t0};
  nr.on('hit',m=>{if(m.isMe||!S)return;const d=m.data||{},e=S.ents.find(x=>x.id==d.i&&!x.dead&&x.team==1);if(e){e.hp-=d.d;e.hit=.2;fx(e.x,e.y-90,''+d.d,'#fff');if(e.hp<=0)e.die({x:e.x})}});
  nr.on('obs',m=>{if(m.isMe||!S)return;const d=m.data||{},o=S.obs[d.i];if(o){MP.ap=1;hitObs(o,d.d);MP.ap=0}});
@@ -517,7 +517,7 @@ function drawEntX(e){const x=e.x-cam;if((e.isP||e.remote)&&e.dead){c.save();c.tr
    if(pr>0){box(x-28,e.y-70,56,10,'#040',3);box(x-28,e.y-70,Math.max(4,56*pr),10,'#4e4',3)}else if(!P.dead&&Math.abs(e.x-P.x)<70&&Math.abs(e.gz-P.gz)<45)txt('[E] Revive '+reviveCost(e.lvl)+SYM.gold,x,e.y-58,13,'#fd3','center')}}}
 function startStage(lv,si){if(MP.on){if(!mpLeadOK()){say('Only the party leader (or a living ally if the leader is down) can start stages.');return}const seed=Math.random()*1e9|0;mpSend('go',{lv,si,seed});P.cur=lv;goStage(si,seed)}else{P.cur=lv;goStage(si)}}
 function startNext(){if(MP.on&&!mpLeadOK()){if(!MP.wt||Date.now()-MP.wt>3000){MP.wt=Date.now();say('Waiting for the party leader to go on...')}return}startStage(P.cur,S.si+1)}
-let partyPeerSignature='';function refreshPartyIfChanged(){const sig=mpPeers().map(p=>p.id||p.peerId||p.name||'').sort().join('|');if(sig!==partyPeerSignature){partyPeerSignature=sig;openParty()}}
+let partyPeerSignature='';function refreshPartyIfChanged(){if(!MP.menu||!MP.on)return;const sig=mpPeers().map(p=>p.id||p.peerId||p.name||'').sort().join('|');if(sig!==partyPeerSignature){partyPeerSignature=sig;openParty()}}
 function openParty(){MP.menu=1;cur=openParty;partyPeerSignature=mpPeers().map(p=>p.id||p.peerId||p.name||'').sort().join('|');const ps=mpPeers();
  const html=`<div class="p nav"><h3>PARTY PORTAL</h3><button class="x" id="party-close" type="button">Close</button></div>`+(MP.on?`<div class="p"><h3>Party code: <span style="color:#fd3">${MP.code}</span></h3><small>Share this code. Friends press "Join party" and type it. ${mpHost()?'You are the leader: you pick missions and start stages.':'The leader picks missions.'}</small><div class="row"><span><b>${mpName()}</b> (you) Lv${P.lvl}</span><span>${mpHost()?'👑 leader':''}</span></div>`+ps.map(p=>{const q=p.presence||{};return `<div class="row"><span>${String(q.n||'Player').slice(0,12)} Lv${q.l||'?'} · HP ${q.h||'?'}/${q.m||'?'}</span><span>${q.t0!=null&&q.t0<MP.t0?'👑':''}</span></div>`}).join('')+`<button class="x" id="party-leave" type="button">${MP.busy?'Leaving…':'Leave party'}</button></div>`:`<div class="p"><h3>Play online</h3>${MP.na?'<p>Online play needs an internet connection. Create a party and share its code.</p>':''}<div>Nickname: <input id="pn" maxlength="12" value="${mpName()}"></div><div style="margin-top:8px"><button id="party-create" type="button" ${MP.busy?'disabled':''}>${MP.busy?'Connecting…':'Create party'}</button></div><div style="margin-top:8px">Code: <input id="pc" maxlength="8" placeholder="e.g. k7m2"> <button id="party-join" type="button" ${MP.busy?'disabled':''}>Join party</button></div></div>`);
  ui(html);
@@ -688,6 +688,24 @@ function newGame(){P=new Player({});closeUI();$('#ui').style.background='';goLob
 function cont(){if(load()){closeUI();$('#ui').style.background='';goLobby()}}
 cv.addEventListener('pointerdown',()=>{if(G=='intro')KP.e=1});
 function loop(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;update(dt);draw();for(const k in KP)delete KP[k];requestAnimationFrame(loop)}
+
+// Keep the 16:9 game canvas fitted to the available viewport, including mobile browser bars.
+(function fitGameCanvas(){
+  const canvas=document.getElementById('g');
+  if(!canvas)return;
+  const fit=()=>{
+    const vw=Math.max(1,window.visualViewport?.width||window.innerWidth||document.documentElement.clientWidth);
+    const vh=Math.max(1,window.visualViewport?.height||window.innerHeight||document.documentElement.clientHeight);
+    const scale=Math.min(vw/16, vh/9);
+    canvas.style.width=Math.floor(16*scale)+'px';
+    canvas.style.height=Math.floor(9*scale)+'px';
+    canvas.style.left='50%'; canvas.style.top='50%';
+  };
+  fit(); window.addEventListener('resize',fit,{passive:true});
+  window.addEventListener('orientationchange',()=>setTimeout(fit,120),{passive:true});
+  window.visualViewport?.addEventListener('resize',fit,{passive:true});
+})();
+
 try{document.fonts.load('20px Anton');document.fonts.load("bold 15px 'Comic Neue'")}catch(e){}
 titleMenu();requestAnimationFrame(loop);
 </script>
