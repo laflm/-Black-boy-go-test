@@ -25,7 +25,7 @@ button.x{background:#f88}input{font:inherit;background:#fff;border:3px solid #00
 .row:hover{background:#ffffff14;border-radius:6px}.bar{height:8px;background:#0007;border-radius:4px;overflow:hidden;margin-top:3px}.bar i{display:block;height:100%;background:linear-gradient(#fe9,#f90);animation:grow .6s ease-out}
 .r1{color:#fff}.r2{color:#7cf}.r3{color:#d9f}.r4{color:#fb3;text-shadow:0 0 6px #f90}.tip:hover::after{animation:fade .15s}h3{border-bottom:2px solid #fd3;padding-bottom:3px;font-family:Anton,Impact,'Arial Black',sans-serif;letter-spacing:.5px;font-weight:400}.info{cursor:pointer;margin-left:4px;color:#8cf}.stk{position:sticky;top:var(--nh,76px);align-self:flex-start}.chips{position:sticky;top:var(--nh,64px);z-index:9;background:var(--pn);padding:6px 4px;border-radius:8px}.nav button{font-family:Anton,Impact,'Arial Black',sans-serif;letter-spacing:.5px;font-weight:400}.br{display:flex;align-items:center}.ch{display:flex;flex-direction:column;border-left:3px solid #fd3;margin-left:14px;padding-left:12px}.tn{flex:none;width:158px}@media(max-width:600px){.stk{position:static}}.tip{position:relative}.tip:hover::after{content:attr(data-t);position:absolute;left:8px;top:100%;z-index:20;background:#000;color:#fff;border:2px solid #fd3;border-radius:8px;padding:6px 8px;width:max-content;max-width:300px;font-size:13px;white-space:pre-line}button:disabled{opacity:.4}
 #tc{position:absolute;inset:auto 0 8px 0;display:none;pointer-events:none;z-index:4}
-#tc button{position:absolute;pointer-events:auto;width:54px;height:54px;border-radius:50%;opacity:.75;font-size:15px;padding:0}
+#tc button{position:absolute;pointer-events:auto;width:54px;height:54px;border-radius:50%;opacity:.75;font-size:15px;padding:0;line-height:1.05}#joy{position:absolute;left:18px;bottom:30px;width:140px;height:140px;border-radius:50%;background:#fff3;border:4px solid #000a;pointer-events:auto;touch-action:none}#joy i{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px;border-radius:50%;background:#fffd;border:4px solid #000}
 </style></head><body>
 <canvas id="g" width="800" height="450"></canvas><div id="ui"></div><div id="ask"></div><div id="inf"></div><div id="tc"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -471,46 +471,10 @@ class BBGPeerRoom{
  peers(){return this.peersList.slice()}
  emit(name,data){const msg={__bbg:'event',name,data};if(this.host){this._broadcast(msg);return Promise.resolve()}const host=this.peersList.find(p=>!p.isMe&&p.peer===('bbg-'+this.code));const conn=this.peerConns.get(host?.peer);if(conn&&conn.open){try{conn.send(msg);return Promise.resolve()}catch(e){}}// Guest connection may be keyed by the host ID but not yet synced.
   for(const c of this.peerConns.values())if(c.open){try{c.send(msg);return Promise.resolve()}catch(e){}}return Promise.reject(new Error('Party connection unavailable'))}
- presence(data){this.local.presence=data;if(this.host)this._syncPeers();else{for(const conn of this.peerConns.values())if(conn.open)try{conn.send({__bbg:'presence',data})}catch(e){}}return Promise.resolve()}
+ presence(data){this.local.presence=data;if(this.host){this._broadcast({__bbg:'state',peers:this._snapshot(),hostPresence:this.local.presence})}else{for(const conn of this.peerConns.values())if(conn.open)try{conn.send({__bbg:'presence',data})}catch(e){}}return Promise.resolve()}
  async leave(){try{for(const c of this.peerConns.values())c.close()}catch(e){}try{this.peer.destroy()}catch(e){}this.peerConns.clear();this.peerData.clear();this.peersList=[]}
 }
-async function mpRoom(create,code){
-  // PeerJS-only multiplayer: deliberately no Claude SDK/authentication fallback.
-  if(!window.Peer){MP.na=1;return null}
-  const id='bbg-'+code;
-  let peer=null;
-  try{
-    peer=create?new Peer(id):new Peer();
-    await new Promise((resolve,reject)=>{
-      const timer=setTimeout(()=>reject(new Error('PeerJS signaling timed out')),12000);
-      peer.once('open',()=>{clearTimeout(timer);resolve()});
-      peer.once('error',e=>{clearTimeout(timer);reject(e)});
-    });
-    return {peer,join:async()=>{
-      const room=new BBGPeerRoom(peer,code,!!create);
-      if(!create){
-        const conn=peer.connect(id,{reliable:true});
-        await new Promise((resolve,reject)=>{
-          const timer=setTimeout(()=>reject(new Error('Party not found or connection timed out')),12000);
-          conn.once('open',()=>{
-            clearTimeout(timer);
-            room.peerConns.set(id,conn);
-            conn.on('data',msg=>room._receive(id,msg));
-            conn.on('close',()=>{room.peerConns.delete(id);if(MP.room===room){MP.on=0;MP.room=null;MP.code='';say('Party connection closed.')}});
-            conn.on('error',()=>{});
-            resolve();
-          });
-          conn.once('error',e=>{clearTimeout(timer);reject(e)});
-        });
-      }
-      return room;
-    }};
-  }catch(e){
-    MP.na=2;
-    try{if(peer&&!peer.destroyed)peer.destroy()}catch(_){}
-    return null;
-  }
-}
+async function mpRoom(create,code){if(!window.Peer){MP.na=1;return null}try{const id='bbg-'+code;const peer=create?new Peer(id):new Peer();await new Promise((resolve,reject)=>{peer.once('open',resolve);peer.once('error',reject)});return {peer,join:async()=>{const room=new BBGPeerRoom(peer,code,!!create);if(!create){const conn=peer.connect(id,{reliable:true});await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Party not found or connection timed out')),10000);conn.once('open',()=>{clearTimeout(timer);room.peerConns.set(id,conn);conn.on('data',msg=>room._receive(id,msg));conn.on('close',()=>{room.peerConns.delete(id)});conn.on('error',()=>{});resolve()});conn.once('error',e=>{clearTimeout(timer);reject(e)})});}return room}}}catch(e){MP.na=2;return null}}
 async function mpJoin(code,create){const rt=await mpRoom(!!create,code);if(!rt)return false;try{const nr=await rt.join('bbg-'+code);MP.room=nr;MP.code=code;MP.on=1;MP.t0=Date.now();MP.id=Math.random().toString(36).slice(2,10);if(nr.local)nr.local.presence={n:mpName(),t0:MP.t0};
  nr.on('hit',m=>{if(m.isMe||!S)return;const d=m.data||{},e=S.ents.find(x=>x.id==d.i&&!x.dead&&x.team==1);if(e){e.hp-=d.d;e.hit=.2;fx(e.x,e.y-90,''+d.d,'#fff');if(e.hp<=0)e.die({x:e.x})}});
  nr.on('obs',m=>{if(m.isMe||!S)return;const d=m.data||{},o=S.obs[d.i];if(o){MP.ap=1;hitObs(o,d.d);MP.ap=0}});
@@ -520,7 +484,7 @@ async function mpJoin(code,create){const rt=await mpRoom(!!create,code);if(!rt)r
  nr.on('rev',m=>{const d=m.data||{};if(m.isMe||d.to!==MP.id||!P.dead||!S)return;P.dead=false;P.hp=Math.max(1,P.maxHp*.3|0);P.iframes=2;MP.dn=0;vfx(P.x,P.y-60,'plus',{c:'#6f6',d:.9});vfx(P.x,P.y-40,'ring',{c:'#6f6',r:90,d:.7});SFX.heal();say('You were revived by an ally!')});
  nr.on('sn',m=>{if(m.isMe||!S||mpAuth())return;mpApplySnap(m.data||{})});
  nr.onPeers(()=>{if(MP.menu&&MP.on)refreshPartyIfChanged()});mpPres();if(create)say('Party created! Share the code '+code);return true}catch(e){try{await rt.peer?.destroy?.()}catch(_){}MP.na=2;return false}}
-async function mpLeave(){if(MP.room)try{await MP.room.leave()}catch(e){}MP.on=0;MP.room=null;MP.code='';MP.rt=undefined}
+async function mpLeave(){const room=MP.room;MP.menu=0;MP.on=0;MP.room=null;MP.code='';MP.rt=undefined;partyPeerSignature='';if(room)try{await room.leave()}catch(e){}}
 const mpSend=(t,d)=>{if(MP.on&&MP.room)MP.room.emit(t,d).catch(()=>{})};
 const mpPeers=()=>MP.on&&MP.room?MP.room.peers().filter(p=>!p.isMe):[];
 function mpHost(){if(!MP.on)return true;const ps=MP.room.peers().filter(p=>p.presence&&p.presence.t0!=null).sort((a,b)=>a.presence.t0-b.presence.t0||(a.peer<b.peer?-1:1));return !ps.length||ps[0].sameTab}
@@ -555,11 +519,12 @@ function drawEntX(e){const x=e.x-cam;if((e.isP||e.remote)&&e.dead){c.save();c.tr
    if(pr>0){box(x-28,e.y-70,56,10,'#040',3);box(x-28,e.y-70,Math.max(4,56*pr),10,'#4e4',3)}else if(!P.dead&&Math.abs(e.x-P.x)<70&&Math.abs(e.gz-P.gz)<45)txt('[E] Revive '+reviveCost(e.lvl)+SYM.gold,x,e.y-58,13,'#fd3','center')}}}
 function startStage(lv,si){if(MP.on){if(!mpLeadOK()){say('Only the party leader (or a living ally if the leader is down) can start stages.');return}const seed=Math.random()*1e9|0;mpSend('go',{lv,si,seed});P.cur=lv;goStage(si,seed)}else{P.cur=lv;goStage(si)}}
 function startNext(){if(MP.on&&!mpLeadOK()){if(!MP.wt||Date.now()-MP.wt>3000){MP.wt=Date.now();say('Waiting for the party leader to go on...')}return}startStage(P.cur,S.si+1)}
-let partyPeerSignature='';function refreshPartyIfChanged(){if(!MP.menu||!MP.on)return;const sig=mpPeers().map(p=>p.peer||p.id||p.peerId||p.name||'').sort().join('|');if(sig!==partyPeerSignature){partyPeerSignature=sig;openParty()}}
-function openParty(){MP.menu=1;cur=openParty;partyPeerSignature=mpPeers().map(p=>p.peer||p.id||p.peerId||p.name||'').sort().join('|');const ps=mpPeers();
+let partyPeerSignature='';function partySignature(){return mpPeers().map(p=>p.peer||p.id||p.peerId||p.name||'').sort().join('|')}
+function refreshPartyIfChanged(){if(!MP.menu||!MP.on)return;const sig=partySignature();if(sig!==partyPeerSignature){partyPeerSignature=sig;openParty()}}
+function openParty(){MP.menu=1;cur=openParty;partyPeerSignature=partySignature();const ps=mpPeers();
  const html=`<div class="p nav"><h3>PARTY PORTAL</h3><button class="x" id="party-close" type="button">Close</button></div>`+(MP.on?`<div class="p"><h3>Party code: <span style="color:#fd3">${MP.code}</span></h3><small>Share this code. Friends press "Join party" and type it. ${mpHost()?'You are the leader: you pick missions and start stages.':'The leader picks missions.'}</small><div class="row"><span><b>${mpName()}</b> (you) Lv${P.lvl}</span><span>${mpHost()?'👑 leader':''}</span></div>`+ps.map(p=>{const q=p.presence||{};return `<div class="row"><span>${String(q.n||'Player').slice(0,12)} Lv${q.l||'?'} · HP ${q.h||'?'}/${q.m||'?'}</span><span>${q.t0!=null&&q.t0<MP.t0?'👑':''}</span></div>`}).join('')+`<button class="x" id="party-leave" type="button">${MP.busy?'Leaving…':'Leave party'}</button></div>`:`<div class="p"><h3>Play online</h3>${MP.na?'<p>Online play needs an internet connection. Create a party and share its code.</p>':''}<div>Nickname: <input id="pn" maxlength="12" value="${mpName()}"></div><div style="margin-top:8px"><button id="party-create" type="button" ${MP.busy?'disabled':''}>${MP.busy?'Connecting…':'Create party'}</button></div><div style="margin-top:8px">Code: <input id="pc" maxlength="8" placeholder="e.g. k7m2"> <button id="party-join" type="button" ${MP.busy?'disabled':''}>Join party</button></div></div>`);
  ui(html);
- $('#party-close')?.addEventListener('click',closeUI);
+ $('#party-close')?.addEventListener('click',()=>{MP.menu=0;closeUI()});
  $('#party-create')?.addEventListener('click',()=>A.pcreate());
  $('#party-join')?.addEventListener('click',()=>A.pjoin());
  $('#party-leave')?.addEventListener('click',()=>A.pleave());
@@ -571,9 +536,19 @@ const down=a=>K[KEYS[a]]||(a=='left'&&K.arrowleft)||(a=='right'&&K.arrowright)||
 const press=a=>KP[KEYS[a]]||(a=='left'&&KP.arrowleft)||(a=='right'&&KP.arrowright)||(a=='up'&&KP.arrowup)||(a=='down'&&KP.arrowdown);
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(!K[k])KP[k]=1;K[k]=1;if(k==' '||k.startsWith('arrow'))e.preventDefault()});
 addEventListener('keyup',e=>K[e.key.toLowerCase()]=0);
-if(matchMedia('(pointer:coarse)').matches){const t=$('#tc');t.style.display='block';t.style.height='170px';
- [['◀','q','0px','44px'],['▶','d','96px','44px'],['▲','z','48px','96px'],['▼','s','48px','-2px'],['J','j','-4px','8px','r'],['K','k','60px','8px','r'],['L','l','124px','8px','r'],['USE','i','-4px','72px','r'],['⇄','o','60px','72px','r'],['E','e','124px','72px','r'],['JMP',' ','190px','40px','r'],['☰','m','190px','104px','r']].forEach(([l,k,x,y,r])=>{const b=document.createElement('button');b.textContent=l;b.style[r?'right':'left']=x;b.style.bottom=y;
-  b.ontouchstart=e=>{e.preventDefault();KP[k]=1;K[k]=1};b.ontouchend=e=>{e.preventDefault();K[k]=0};t.appendChild(b)})}
+if(matchMedia('(pointer:coarse)').matches){const t=$('#tc');t.style.display='block';t.style.height='260px';
+ // virtual joystick (left thumb) replaces the 4 arrows; flick the same direction twice = dash
+ const jb=document.createElement('div');jb.id='joy';jb.innerHTML='<i></i>';t.appendChild(jb);let jid=null;const knob=jb.firstChild;
+ const jset=(x,y)=>{const r=jb.getBoundingClientRect(),rad=r.width/2,dx=x-(r.left+rad),dy=y-(r.top+rad),d=Math.min(1,Math.hypot(dx,dy)/rad),a=Math.atan2(dy,dx);knob.style.transform=`translate(${Math.cos(a)*d*rad*.6}px,${Math.sin(a)*d*rad*.6}px)`;
+  [['left',dx/rad<-.3],['right',dx/rad>.3],['up',dy/rad<-.3],['down',dy/rad>.3]].forEach(([n,on])=>{const k=KEYS[n];if(on&&!K[k])KP[k]=1;K[k]=on?1:0})};window.joySet=jset;
+ const jfind=e=>[...e.changedTouches].find(q=>q.identifier===jid);
+ jb.addEventListener('touchstart',e=>{e.preventDefault();const q=e.changedTouches[0];jid=q.identifier;jset(q.clientX,q.clientY)},{passive:false});
+ jb.addEventListener('touchmove',e=>{e.preventDefault();const q=jfind(e);if(q)jset(q.clientX,q.clientY)},{passive:false});
+ const jend=e=>{if(jfind(e)){jid=null;knob.style.transform='';['left','right','up','down'].forEach(n=>K[KEYS[n]]=0)}};jb.addEventListener('touchend',jend);jb.addEventListener('touchcancel',jend);
+ // right thumb arc: [label,key,right px,bottom px,size,ability slot]. Order matches the HUD: J K L then the set skill H.
+ window.TB=[];[['J','j',22,26,76,0],['K','k',108,20,60,1],['L','l',22,114,60,2],['JMP',' ',104,96,58],['H','h',22,190,54],['E','e',190,26,50],['USE','i',190,82,46],['⇄','o',190,132,46],['☰','m',104,170,44]].forEach(([l,k,x,y,sz,sl])=>{const b=document.createElement('button');b.innerHTML=l;b.style.right=x+'px';b.style.bottom=y+'px';b.style.width=b.style.height=sz+'px';if(sz>=58)b.style.fontSize='18px';
+  b.ontouchstart=e=>{e.preventDefault();KP[k]=1;K[k]=1};b.ontouchend=b.ontouchcancel=e=>{e.preventDefault();K[k]=0};t.appendChild(b);if(sl!=null||k=='h')TB.push([b,k,sl,l])})}
+function tbUpdate(){if(!window.TB||!P)return;TB.forEach(([b,k,sl,l])=>{const id=sl!=null?P.slots[sl]:P.setAbil(),A_=id&&ABIL[id],cd=id?Math.max(0,P.cd[id]||0):0,h=A_?`<span style="font-size:20px">${A_.icon}</span><br><small>${l}${cd>0?' '+cd.toFixed(0):''}</small>`:l;if(b.dataset.h!==h){b.innerHTML=h;b.dataset.h=h}b.style.opacity=cd>0?.4:.85})} // live icon + cooldown on each skill button
 function say(s){qs=s;qt=4}function fx(x,y,s,col){S.fx.push({x,y,s,col,t:1})}
 function drop(x,id,n,gz=GY){S.drops.push({x:x+rnd(-20,20),y:gz-60,gz,vy:-200,id,n})}
 // ---- SAVE ----
@@ -597,7 +572,7 @@ function update(dt){
  if(G=='intro'){I.t+=dt;shake*=.9;if(I.t>1.3&&!I.hit){I.hit=1;shake=14;I.fl=.3;SFX.boom()}if(I.fl>0)I.fl-=dt;const ln=I.L.boss.lines[I.l];if(I.t>2.2&&ln){const pc=I.ch|0;I.ch=Math.min(ln.length,I.ch+dt*35);if((I.ch|0)>pc&&ln[pc]!=' ')tone(180+rnd(0,90),.05,'square',.06);if(press('act')||press('jump')||KP.enter){if(I.ch<ln.length)I.ch=ln.length;else{I.l++;I.ch=0}}}if(I.l>=I.L.boss.lines.length){G='play';fadeT=.6}return}
  if(G!='play')return;if(MP.on){MP.auth=mpHost();mpSync();mpRevive(dt)}MECH.forEach(m=>m(dt));
  S.ents.forEach(e=>{if(!e.dead)e.update(dt)});S.ents=S.ents.filter(e=>e.isP||e.remote||!e.dead);if(MP.on&&MP.auth&&(MP.sf=(MP.sf+1)%6)==0)mpSnap();
- S.proj.forEach(p=>{p.x+=p.vx*dt;p.t-=dt;if(R()<.7)vfx(p.x,p.y,'burst',{c:p.col,d:.2});(p.vis?[]:foes(p)).forEach(f=>{if(p.t>0&&Math.abs(f.x-p.x)<28&&Math.abs(f.gz-p.gz)<32&&Math.abs((f.y-45)-p.y)<115){f.hurt(p.dmg,p.src);vfx(p.x,p.y,'burst',{c:p.col});p.t=0}})});S.proj.forEach(p=>{if(p.t>0&&p.src&&p.src.isP)S.obs.forEach(o=>{if(o.hp>0&&Math.abs(p.x-o.x)<30){hitObs(o,p.dmg);p.t=0}})});S.proj=S.proj.filter(p=>p.t>0);
+ S.proj.forEach(p=>{p.x+=p.vx*dt;p.t-=dt;if(R()<.7)vfx(p.x,p.y,'burst',{c:p.col,d:.2});(p.vis?[]:foes(p)).forEach(f=>{if(p.t>0&&Math.abs(f.x-p.x)<28&&Math.abs(f.gz-p.gz)<32&&Math.abs((f.y-45)-p.y)<115){f.hurt(p.dmg,p.src);vfx(p.x,p.y,'burst',{c:p.col});p.t=0}})});S.proj.forEach(p=>{if(p.team==1&&p.t>0&&S.obs.some(o=>o.hp>0&&Math.abs(p.x-o.x)<30)){p.t=0;vfx(p.x,p.y,'burst',{c:'#a86',d:.25})}});S.proj.forEach(p=>{if(p.t>0&&p.src&&p.src.isP)S.obs.forEach(o=>{if(o.hp>0&&Math.abs(p.x-o.x)<30){hitObs(o,p.dmg);p.t=0}})});S.proj=S.proj.filter(p=>p.t>0);
  S.drops.forEach(d=>{d.vy+=900*dt;d.y=Math.min(d.gz-10,d.y+d.vy*dt);const dx=P.x-d.x,dl=P.gz-d.gz;if(Math.abs(dx)<120&&Math.abs(dl)<80){d.x+=Math.sign(dx)*Math.min(Math.abs(dx),280*dt);d.gz+=Math.sign(dl)*Math.min(Math.abs(dl),220*dt)}if(Math.abs(dx)<30&&Math.abs(dl)<45){d.got=1;if(d.id=='gold'){P.gold+=d.n;fx(d.x,d.y-20,'+'+d.n+SYM.gold,'#fd3');SFX.coin()}else{P.inv[d.id]=(P.inv[d.id]||0)+d.n;fx(d.x,d.y-20,'+'+ITEMS[d.id].name,'#9f9');SFX.pick()}}});S.drops=S.drops.filter(d=>!d.got);
  {const rp=P;S.tel.forEach(t=>{t.t-=dt;if(t.t<=0&&!t.d){t.d=1;if(t.cb){if(MP.on&&!t.loc){PR=rp;S.ents.filter(x=>(x.isP||x.remote)&&!x.dead).forEach(pl=>{P=pl;t.cb()});P=rp;PR=null}else t.cb()}}})}S.tel=S.tel.filter(t=>t.t>0);S.obs.forEach(o=>{if(o.hit>0)o.hit-=dt});S.vfx.forEach(v=>v.t+=dt);S.vfx=S.vfx.filter(v=>v.t<v.d);S.fx.forEach(f=>{f.t-=dt;f.y-=30*dt});S.fx=S.fx.filter(f=>f.t>0);if(S.stage)STAGE_TYPES[S.stage.type]?.update(S,dt);
  if(P.hp<=0){if(MP.on&&!mpAllDown()){if(!MP.dn){MP.dn=1;say('You are down! An ally can revive you (E)...')}}else{MP.dn=0;P.hp=P.maxHp;say('You got rebooted! You keep all your loot and gold. The robots keep their dignity.');goLobby();return}}
@@ -716,16 +691,17 @@ let SH=null;
 function openShop(sh,tab='buy'){SH=sh;cur=()=>openShop(sh,tab);const own=Object.keys(P.inv).filter(k=>P.inv[k]>0);
  ui(`<div class="p nav"><h3>SHOP ${SYM.gold} ${P.gold}</h3>${['buy','sell'].map(k=>`<button ${k==tab?'disabled':''} onclick="openShop(SH,'${k}')">${k.toUpperCase()}</button>`).join('')}<button class="x" onclick="closeUI()">Leave</button></div><div class="p">`+
  chips(tab)+(tab=='buy'?sh.stock.filter(k=>inSub('buy',k)).sort(byUtil).map(k=>`<div class="row"><span>${nm(k)} ${st(k)||ITEMS[k].desc||''}</span><button onclick="A.buy('${k}')">${ITEMS[k].price}${SYM.gold}</button></div>`).join(''):own.filter(k=>inSub('sell',k)).sort(byUtil).map(k=>`<div class="row"><span>${nm(k)} x${P.inv[k]}</span><button onclick="A.sell('${k}')">${ITEMS[k].price>>1}${SYM.gold}</button></div>`).join('')||'Nothing to sell.')+`</div>`)}
+const isBossR=r=>Object.keys(r.need).some(k=>/^core/.test(k)); // boss crafts = recipes that use a boss core
 function openArcade(tab='craft'){cur=()=>openArcade(tab);const inv=k=>P.inv[k]||0;
- ui(`<div class="p nav"><h3>ARCADE</h3>${['craft','dismantle'].map(k=>`<button ${k==tab?'disabled':''} onclick="openArcade('${k}')">${k.toUpperCase()}</button>`).join('')}<button class="x" onclick="closeUI()">Leave</button></div><div class="p">`+
- chips(tab)+(tab=='craft'?RECIPES.map((r,i)=>!inSub('craft',r.out)?'':(r.lv||0)>P.prog?'':`<div class="row"><span>${nm(r.out)}${ITEMS[r.out].abil?' ✨'+ABIL[ITEMS[r.out].abil].name:''} ← ${Object.entries(r.need).map(([k,n])=>nm(k)+' '+inv(k)+'/'+n).join(', ')}</span><button ${Object.entries(r.need).some(([k,n])=>inv(k)<n)?'disabled':''} onclick="A.craft(${i})">Craft</button></div>`).join(''):
+ ui(`<div class="p nav"><h3>ARCADE</h3>${['craft','boss','dismantle'].map(k=>`<button ${k==tab?'disabled':''} onclick="openArcade('${k}')">${k=='boss'?'BOSS CRAFTS':k.toUpperCase()}</button>`).join('')}<button class="x" onclick="closeUI()">Leave</button></div><div class="p">`+
+ chips(tab)+(tab!='dismantle'?RECIPES.map((r,i)=>(tab=='boss')!=isBossR(r)||!inSub(tab,r.out)?'':(r.lv||0)>P.prog?'':`<div class="row"><span>${nm(r.out)}${ITEMS[r.out].abil?' ✨'+ABIL[ITEMS[r.out].abil].name:''} ← ${Object.entries(r.need).map(([k,n])=>nm(k)+' '+inv(k)+'/'+n).join(', ')}</span><button ${Object.entries(r.need).some(([k,n])=>inv(k)<n)?'disabled':''} onclick="A.craft(${i})">Craft</button></div>`).join(''):
  (Object.keys(P.inv).filter(k=>P.inv[k]>0&&ITEMS[k].slot&&inSub('dismantle',k)).sort(byUtil).map(k=>`<div class="row"><span>${nm(k)} x${P.inv[k]}</span><button onclick="A.dis('${k}')">Dismantle</button></div>`).join('')||'No gear to dismantle.'))+`</div>`)}
 // ---- TITLE & LOOP ----
 function titleMenu(){ui(`<div class="p" style="margin-top:230px;text-align:center"><button onclick="newGame()">New Game</button>${localStorage.getItem('bbg')?'<button onclick="cont()">Continue</button>':''}${sndBtns()}<div style="font-size:12px">(Yes, the title is animated. The sprite swap is in loadSprite().)</div></div>`);$('#ui').style.background='transparent'}
 function newGame(){P=new Player({});closeUI();$('#ui').style.background='';goLobby()}
 function cont(){if(load()){closeUI();$('#ui').style.background='';goLobby()}}
 cv.addEventListener('pointerdown',()=>{if(G=='intro')KP.e=1});
-function loop(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;update(dt);draw();for(const k in KP)delete KP[k];requestAnimationFrame(loop)}
+function loop(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;update(dt);draw();tbUpdate();for(const k in KP)delete KP[k];requestAnimationFrame(loop)}
 try{document.fonts.load('20px Anton');document.fonts.load("bold 15px 'Comic Neue'")}catch(e){}
 titleMenu();requestAnimationFrame(loop);
 </script>
