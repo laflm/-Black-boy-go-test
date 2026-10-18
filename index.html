@@ -21,7 +21,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:
 button{font:inherit;background:#fd3;border:3px solid #000;border-radius:10px;padding:5px 10px;margin:2px;color:#000;cursor:pointer}
 button.x{background:#f88}input{font:inherit;background:#fff;border:3px solid #000;border-radius:8px;padding:4px 6px;color:#000}.nav{position:sticky;top:0;z-index:10}
 @keyframes pop{from{transform:translateY(8px);opacity:.4}to{transform:none;opacity:1}}@keyframes grow{from{width:0}}@keyframes fade{from{opacity:0}}
-.p{animation:none}.p.nav{animation:none}button{transition:transform .1s,filter .1s}button:hover:not(:disabled){transform:translateY(-2px) scale(1.05);filter:brightness(1.12)}button:active:not(:disabled){transform:scale(.94)}
+.p{animation:pop .18s ease-out}.p.nav{animation:none}button{transition:transform .1s,filter .1s}button:hover:not(:disabled){transform:translateY(-2px) scale(1.05);filter:brightness(1.12)}button:active:not(:disabled){transform:scale(.94)}
 .row:hover{background:#ffffff14;border-radius:6px}.bar{height:8px;background:#0007;border-radius:4px;overflow:hidden;margin-top:3px}.bar i{display:block;height:100%;background:linear-gradient(#fe9,#f90);animation:grow .6s ease-out}
 .r1{color:#fff}.r2{color:#7cf}.r3{color:#d9f}.r4{color:#fb3;text-shadow:0 0 6px #f90}.tip:hover::after{animation:fade .15s}h3{border-bottom:2px solid #fd3;padding-bottom:3px;font-family:Anton,Impact,'Arial Black',sans-serif;letter-spacing:.5px;font-weight:400}.info{cursor:pointer;margin-left:4px;color:#8cf}.stk{position:sticky;top:var(--nh,76px);align-self:flex-start}.chips{position:sticky;top:var(--nh,64px);z-index:9;background:var(--pn);padding:6px 4px;border-radius:8px}.nav button{font-family:Anton,Impact,'Arial Black',sans-serif;letter-spacing:.5px;font-weight:400}.br{display:flex;align-items:center}.ch{display:flex;flex-direction:column;border-left:3px solid #fd3;margin-left:14px;padding-left:12px}.tn{flex:none;width:158px}@media(max-width:600px){.stk{position:static}}.tip{position:relative}.tip:hover::after{content:attr(data-t);position:absolute;left:8px;top:100%;z-index:20;background:#000;color:#fff;border:2px solid #fd3;border-radius:8px;padding:6px 8px;width:max-content;max-width:300px;font-size:13px;white-space:pre-line}button:disabled{opacity:.4}
 #tc{position:absolute;inset:auto 0 8px 0;display:none;pointer-events:none;z-index:4}
@@ -151,8 +151,8 @@ const ITEMS={
  axe:{name:'Ye Olde Axe',slot:'weapon',stats:{str:6,haste:-1},color:'#c96',look:'axe',price:70,shop:1},
  katana:{name:'Pixel Katana',slot:'weapon',stats:{str:5,haste:2},color:'#8ef',price:110,shop:1},
  wand:{name:'Wand of Mild Inconvenience',slot:'weapon',stats:{int:5,acc:1},color:'#e8f',look:'wand',price:85,shop:1},
- vampfang:{name:'Vampire Fang (boss craft)',slot:'weapon',stats:{str:8,haste:1},color:'#c24',price:500,abil:'drain'},
- meteorstaff:{name:'Meteor Staff (boss craft)',slot:'weapon',stats:{int:9},color:'#f80',look:'wand',price:700,abil:'meteor'},
+ vampfang:{name:'Vampire Fang (boss craft)',slot:'weapon',stats:{str:8,haste:1},color:'#c24',set:'mega',price:500,abil:'drain'},
+ meteorstaff:{name:'Meteor Staff (boss craft)',slot:'weapon',stats:{int:9},color:'#f80',look:'wand',set:'ceo',price:700,abil:'meteor'},
  tower:{name:'Tower Shield',slot:'shield',stats:{def:6,spd:-1},color:'#aab',price:140,shop:1},
  lid:{name:'Pot Lid',slot:'shield',stats:{def:1,haste:1},color:'#ccc',look:'round',price:20,shop:1},
  crown:{name:'Crown of Mild Authority',slot:'head',stats:{int:3,acc:3},color:'#fd3',look:'crown',price:130,shop:1},
@@ -171,7 +171,7 @@ const ITEMS={
  bassgun:{name:'Boom Box Blaster (boss craft)',slot:'weapon',stats:{str:8,int:8},color:'#f6d',look:'speaker',set:'dj',price:800,abil:'bass'},
  iceaxe:{name:'Cryo Axe (boss craft)',slot:'weapon',stats:{str:14,int:6},color:'#9df',look:'iceaxe',set:'cryo',price:900,abil:'blizzard'},
  overblade:{name:'Mainframe Blade (boss craft)',slot:'weapon',stats:{str:20,int:10,haste:2},color:'#6f9',look:'circuit',set:'mother',price:1400,abil:'overload'},
- prism:{name:'Prism Staff (craft)',slot:'weapon',stats:{int:14,acc:4},color:'#6ff',look:'wand',price:1000,abil:'laser'},
+ prism:{name:'Prism Staff (craft)',slot:'weapon',stats:{int:14,acc:4},color:'#6ff',look:'wand',set:'cryo',price:1000,abil:'laser'},
  riot:{name:'Riot Shield',slot:'shield',stats:{def:8,spd:-1},color:'#68a',price:260,shop:1},
  mirror:{name:'Mirror Shield',slot:'shield',stats:{def:5,int:4},color:'#dff',price:240,shop:1},
  phones:{name:'Studio Headphones',slot:'head',stats:{haste:3,acc:3},color:'#f6d',look:'phones',price:190,shop:1},
@@ -209,6 +209,8 @@ const ITEMS={
  core:{name:'M.E.G.A. Core',mat:1,price:80},core2:{name:'Sewer Core',mat:1,price:100},core3:{name:'Tower Core',mat:1,price:140},scrap:{name:'Scrap Metal',mat:1,price:4},cog:{name:'Cog',mat:1,price:8},chip:{name:'Shiny Chip',mat:1,price:20}};
 const SETS={mega:{name:'M.E.G.A. Gear',abil:'orbital'},sewer:{name:'Sewer Royalty',abil:'flood'},ceo:{name:'Hostile Takeover',abil:'takeover'},dj:{name:'Main Stage',abil:'beat'},cryo:{name:'Permafrost',abil:'zero'},mother:{name:'Core Ascension',abil:'purge'}},SETP={}; // BOSS SETS: item.set='id'; 3 pieces equipped = special skill on [H]
 const setPieces=id=>SETP[id]||(SETP[id]=Object.keys(ITEMS).filter(k=>ITEMS[k].set==id));
+const setSlots=id=>[...new Set(setPieces(id).map(k=>ITEMS[k].slot))]; // a set needs ONE item per slot, any item of the set (e.g. either boss weapon)
+const owned=k=>(Object.values(P.equip).includes(k)?1:0)+(P.inv[k]||0);
 const SETCORE={mega:'core',sewer:'core2',ceo:'core3',dj:'core4',cryo:'core5',mother:'core6'},COREOF={vampfang:'core',meteorstaff:'core3',prism:'core5'};
 const coreOf=k=>COREOF[k]||(ITEMS[k].set&&SETCORE[ITEMS[k].set]);
 function itemStat(id,q,up){const b=((ITEMS[id]||{}).stats||{})[q]||0,l=(up&&up[id])||0;return b>0?b+Math.ceil(b*.15*l):b} // BLACKSMITH: +15% per level
@@ -283,7 +285,7 @@ class Entity{constructor(o){Object.assign(this,{name:'?',x:0,y:GY,gz:GY,jh:0,jv:
  get maxHp(){return Math.floor((40+this.lvl*10+this.stat('def')*3)*this.hpMul)}
  stat(s){let v=this.base[s]||0;for(const k in this.equip)v+=itemStat(this.equip[k],s,this.up);this.buffs.forEach(b=>{if(b.s==s)v+=b.v});return Math.max(0,v)}
  abils(){const a=Object.keys(this.unl||{}).filter(k=>!ABIL[k].passive);for(const k in this.equip){const x=(ITEMS[this.equip[k]]||{}).abil;if(x&&!a.includes(x))a.push(x)}return a}
- setAbil(){for(const k in SETS){const pc=setPieces(k),eq=Object.values(this.equip);if(pc.length&&pc.every(x=>eq.includes(x)))return SETS[k].abil}return null}
+ setAbil(){for(const k in SETS){const sl=setSlots(k);if(sl.length&&sl.every(q=>{const it=ITEMS[this.equip[q]];return it&&it.set==k}))return SETS[k].abil}return null}
  castId(id){if(!id||(this.cd[id]||0)>0||this.dead)return;const A=ABIL[id];this.cd[id]=A.cd/(1+this.stat('haste')*.05);A.run(this,this.al[id]||1);SFX.cast(id)}
  cast(i){const id=this.slots[i];if(!id||(this.cd[id]||0)>0||this.dead)return;const A=ABIL[id];this.cd[id]=A.cd/(1+this.stat('haste')*.05);A.run(this,this.al[id]||1);SFX.cast(id)}
  hurt(d,src){if(this.dead||this.iframes>0)return;let blk=(this.blockT>0||this.guard)&&(src.x-this.x)*this.face>0;d=Math.max(1,d-this.stat('def')*.5);if(blk)d*=this.guard?.4:.15;
@@ -472,7 +474,43 @@ class BBGPeerRoom{
  presence(data){this.local.presence=data;if(this.host)this._syncPeers();else{for(const conn of this.peerConns.values())if(conn.open)try{conn.send({__bbg:'presence',data})}catch(e){}}return Promise.resolve()}
  async leave(){try{for(const c of this.peerConns.values())c.close()}catch(e){}try{this.peer.destroy()}catch(e){}this.peerConns.clear();this.peerData.clear();this.peersList=[]}
 }
-async function mpRoom(create,code){if(!window.Peer){MP.na=1;return null}try{const id='bbg-'+code;const peer=create?new Peer(id):new Peer();await new Promise((resolve,reject)=>{peer.once('open',resolve);peer.once('error',reject)});return {peer,join:async()=>{const room=new BBGPeerRoom(peer,code,!!create);if(!create){const conn=peer.connect(id,{reliable:true});await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Party not found or connection timed out')),10000);conn.once('open',()=>{clearTimeout(timer);room.peerConns.set(id,conn);conn.on('data',msg=>room._receive(id,msg));conn.on('close',()=>{room.peerConns.delete(id)});conn.on('error',()=>{});resolve()});conn.once('error',e=>{clearTimeout(timer);reject(e)})});}return room}}}catch(e){MP.na=2;return null}}
+async function mpRoom(create,code){
+  // PeerJS-only multiplayer: deliberately no Claude SDK/authentication fallback.
+  if(!window.Peer){MP.na=1;return null}
+  const id='bbg-'+code;
+  let peer=null;
+  try{
+    peer=create?new Peer(id):new Peer();
+    await new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>reject(new Error('PeerJS signaling timed out')),12000);
+      peer.once('open',()=>{clearTimeout(timer);resolve()});
+      peer.once('error',e=>{clearTimeout(timer);reject(e)});
+    });
+    return {peer,join:async()=>{
+      const room=new BBGPeerRoom(peer,code,!!create);
+      if(!create){
+        const conn=peer.connect(id,{reliable:true});
+        await new Promise((resolve,reject)=>{
+          const timer=setTimeout(()=>reject(new Error('Party not found or connection timed out')),12000);
+          conn.once('open',()=>{
+            clearTimeout(timer);
+            room.peerConns.set(id,conn);
+            conn.on('data',msg=>room._receive(id,msg));
+            conn.on('close',()=>{room.peerConns.delete(id);if(MP.room===room){MP.on=0;MP.room=null;MP.code='';say('Party connection closed.')}});
+            conn.on('error',()=>{});
+            resolve();
+          });
+          conn.once('error',e=>{clearTimeout(timer);reject(e)});
+        });
+      }
+      return room;
+    }};
+  }catch(e){
+    MP.na=2;
+    try{if(peer&&!peer.destroyed)peer.destroy()}catch(_){}
+    return null;
+  }
+}
 async function mpJoin(code,create){const rt=await mpRoom(!!create,code);if(!rt)return false;try{const nr=await rt.join('bbg-'+code);MP.room=nr;MP.code=code;MP.on=1;MP.t0=Date.now();MP.id=Math.random().toString(36).slice(2,10);if(nr.local)nr.local.presence={n:mpName(),t0:MP.t0};
  nr.on('hit',m=>{if(m.isMe||!S)return;const d=m.data||{},e=S.ents.find(x=>x.id==d.i&&!x.dead&&x.team==1);if(e){e.hp-=d.d;e.hit=.2;fx(e.x,e.y-90,''+d.d,'#fff');if(e.hp<=0)e.die({x:e.x})}});
  nr.on('obs',m=>{if(m.isMe||!S)return;const d=m.data||{},o=S.obs[d.i];if(o){MP.ap=1;hitObs(o,d.d);MP.ap=0}});
@@ -517,8 +555,8 @@ function drawEntX(e){const x=e.x-cam;if((e.isP||e.remote)&&e.dead){c.save();c.tr
    if(pr>0){box(x-28,e.y-70,56,10,'#040',3);box(x-28,e.y-70,Math.max(4,56*pr),10,'#4e4',3)}else if(!P.dead&&Math.abs(e.x-P.x)<70&&Math.abs(e.gz-P.gz)<45)txt('[E] Revive '+reviveCost(e.lvl)+SYM.gold,x,e.y-58,13,'#fd3','center')}}}
 function startStage(lv,si){if(MP.on){if(!mpLeadOK()){say('Only the party leader (or a living ally if the leader is down) can start stages.');return}const seed=Math.random()*1e9|0;mpSend('go',{lv,si,seed});P.cur=lv;goStage(si,seed)}else{P.cur=lv;goStage(si)}}
 function startNext(){if(MP.on&&!mpLeadOK()){if(!MP.wt||Date.now()-MP.wt>3000){MP.wt=Date.now();say('Waiting for the party leader to go on...')}return}startStage(P.cur,S.si+1)}
-let partyPeerSignature='';function refreshPartyIfChanged(){if(!MP.menu||!MP.on)return;const sig=mpPeers().map(p=>p.id||p.peerId||p.name||'').sort().join('|');if(sig!==partyPeerSignature){partyPeerSignature=sig;openParty()}}
-function openParty(){MP.menu=1;cur=openParty;partyPeerSignature=mpPeers().map(p=>p.id||p.peerId||p.name||'').sort().join('|');const ps=mpPeers();
+let partyPeerSignature='';function refreshPartyIfChanged(){if(!MP.menu||!MP.on)return;const sig=mpPeers().map(p=>p.peer||p.id||p.peerId||p.name||'').sort().join('|');if(sig!==partyPeerSignature){partyPeerSignature=sig;openParty()}}
+function openParty(){MP.menu=1;cur=openParty;partyPeerSignature=mpPeers().map(p=>p.peer||p.id||p.peerId||p.name||'').sort().join('|');const ps=mpPeers();
  const html=`<div class="p nav"><h3>PARTY PORTAL</h3><button class="x" id="party-close" type="button">Close</button></div>`+(MP.on?`<div class="p"><h3>Party code: <span style="color:#fd3">${MP.code}</span></h3><small>Share this code. Friends press "Join party" and type it. ${mpHost()?'You are the leader: you pick missions and start stages.':'The leader picks missions.'}</small><div class="row"><span><b>${mpName()}</b> (you) Lv${P.lvl}</span><span>${mpHost()?'👑 leader':''}</span></div>`+ps.map(p=>{const q=p.presence||{};return `<div class="row"><span>${String(q.n||'Player').slice(0,12)} Lv${q.l||'?'} · HP ${q.h||'?'}/${q.m||'?'}</span><span>${q.t0!=null&&q.t0<MP.t0?'👑':''}</span></div>`}).join('')+`<button class="x" id="party-leave" type="button">${MP.busy?'Leaving…':'Leave party'}</button></div>`:`<div class="p"><h3>Play online</h3>${MP.na?'<p>Online play needs an internet connection. Create a party and share its code.</p>':''}<div>Nickname: <input id="pn" maxlength="12" value="${mpName()}"></div><div style="margin-top:8px"><button id="party-create" type="button" ${MP.busy?'disabled':''}>${MP.busy?'Connecting…':'Create party'}</button></div><div style="margin-top:8px">Code: <input id="pc" maxlength="8" placeholder="e.g. k7m2"> <button id="party-join" type="button" ${MP.busy?'disabled':''}>Join party</button></div></div>`);
  ui(html);
  $('#party-close')?.addEventListener('click',closeUI);
@@ -619,7 +657,7 @@ const cat=k=>{const t=ITEMS[k];return t.slot=='weapon'?'weapon':t.slot=='talisma
 const byUtil=(a,b)=>CATS.indexOf(cat(a))-CATS.indexOf(cat(b))||ITEMS[a].price-ITEMS[b].price;
 const chips=key=>`<div class="chips">${CATS.map(q=>`<button ${(SUB[key]||'all')==q?'disabled':''} onclick="A.sub('${key}','${q}')">${q}</button>`).join('')}</div>`,inSub=(key,k)=>(SUB[key]||'all')=='all'||cat(k)==SUB[key];
 const ICO={},ICOC={potion_hp:'#e44',potion_big:'#e4a',potion_str:'#f93',potion_spd:'#4cf',potion_haste:'#fd3',potion_def:'#aaa',potion_int:'#a6f'};
-function itip(k){const t=ITEMS[k];return t.name+' - '+RN[rar(k)]+' '+(t.slot?t.slot:t.use?'potion':'material')+'\n'+(st(k)||t.desc||'Crafting material')+(t.abil?'\n✨ '+ABIL[t.abil].name+': '+ABILDESC[t.abil]:'')+(t.set?'\nSet: '+SETS[t.set].name+' (3 pieces) → ✨ '+ABIL[SETS[t.set].abil].name+' on [H]':'')+'\nValue: '+t.price+' gold'}
+function itip(k){const t=ITEMS[k];return t.name+' - '+RN[rar(k)]+' '+(t.slot?t.slot:t.use?'potion':'material')+'\n'+(st(k)||t.desc||'Crafting material')+(t.abil?'\n✨ '+ABIL[t.abil].name+': '+ABILDESC[t.abil]:'')+(t.set?'\nSet: '+SETS[t.set].name+' ('+setSlots(t.set).join(' + ')+') → ✨ '+ABIL[SETS[t.set].abil].name+' on [H]':'')+'\nValue: '+t.price+' gold'}
 function ico(k){const it=ITEMS[k],im='style="vertical-align:middle;margin-right:5px;width:24px;height:24px"';if(IMG['icon_'+k]&&IMG['icon_'+k].src)return `<img ${im} src="${IMG['icon_'+k].src}">`; // loadSprite('icon_sword','sword_icon.png') overrides
  if(!ICO[k]){const cv2=document.createElement('canvas');cv2.width=cv2.height=32;const o=c;c=cv2.getContext('2d');c.translate(16,29);c.scale(.55,.55);const col=it.color||'#9cf',sl=it.slot;
   if(sl=='weapon'){c.rotate(.6);poly(col,[[-6,0],[6,0],[8,-30],[0,-48],[-8,-30]]);poly('#9cd',[[-14,-2],[0,-10],[14,-2],[0,4]])}else if(sl=='shield')poly(col,[[-14,-40],[14,-40],[16,-12],[0,4],[-16,-12]]);
@@ -647,7 +685,7 @@ function treeHTML(){const kids=id=>Object.keys(TREE).filter(k=>TREE[k].req==id),
   return `<div class="p tip tn" data-t="${tip(id)}" style="margin:4px 0;opacity:${ok||can?1:.55}"><b>${B.icon} ${B.name}</b> ${ok?'lv'+P.al[id]:'🔒'}<br><small>${T.desc||'Boss/set skill: usable while its gear is equipped.'}${T.req?' · needs '+ABIL[T.req].name:''}</small><br>`+(ok?`<button ${P.sp<upCost(P.al[id])?'disabled':''} onclick="A.up('${id}')">Upgrade ${upCost(P.al[id])}${SYM.sp}</button>`:`<button ${!can||P.sp<T.cost?'disabled':''} onclick="A.ul('${id}')">Unlock ${T.cost}${SYM.sp}</button>`)+`</div>`};
  const br=id=>{const k=kids(id);return `<div class="br">${card(id)}${k.length?`<div class="ch">${k.map(br).join('')}</div>`:''}</div>`};const xt=ITEMABIL.filter(id=>P.seen[id]);
  return `<div class="p"><h3>Skill Tree — ${SYM.sp} ${P.sp} points (hover a skill for details)</h3>${roots.map(br).join('')}</div>`+(xt.length?`<div class="p"><h3>Boss &amp; Set Skills</h3><div style="display:flex;flex-wrap:wrap;gap:6px">${xt.map(card).join('')}</div></div>`:'')}
-function setInfo(){return Object.keys(SETS).map(k=>{const pc=setPieces(k),eq=Object.values(P.equip),n=pc.filter(x=>eq.includes(x)).length,own=pc.filter(x=>eq.includes(x)||P.inv[x]>0).length;return `<div class="row tip" data-t="${tip(SETS[k].abil)}"><span>${SETS[k].name}: ${pc.map(x=>ico(x)).join('')} <b>${n}/${pc.length}</b> equipped (${own} owned)</span><span>${ABIL[SETS[k].abil].icon} ${ABIL[SETS[k].abil].name}${n==pc.length?' ✅':''}</span></div>`}).join('')}
+function setInfo(){return Object.keys(SETS).map(k=>{const pc=setPieces(k),eq=Object.values(P.equip),sl=setSlots(k),n=sl.filter(q=>{const it=ITEMS[P.equip[q]];return it&&it.set==k}).length,own=pc.filter(x=>eq.includes(x)||P.inv[x]>0).length;return `<div class="row tip" data-t="${tip(SETS[k].abil)}"><span>${SETS[k].name}: ${pc.map(x=>ico(x)).join('')} <b>${n}/${sl.length}</b> equipped (${own} owned)</span><span>${ABIL[SETS[k].abil].icon} ${ABIL[SETS[k].abil].name}${n==sl.length?' ✅':''}</span></div>`}).join('')}
 function loadoutHTML(){return `<div class="p"><h3>Loadout — equip ${NSKILL} abilities</h3>`+P.slots.map((id,i)=>`<div class="row tip" data-t="${tip(id)}"><b>${'JKL'[i]}</b><span>${ABIL[id].icon} ${ABIL[id].name} lv${P.al[id]||1}</span></div>`).join('')+`</div><div class="p"><h3>Special key [H] — boss sets</h3>${setInfo()}</div><div class="p"><h3>Known abilities</h3>`+P.abils().map(a=>`<div class="row tip" data-t="${tip(a)}"><span>${ABIL[a].icon} ${ABIL[a].name}${P.unl[a]?'':' (from item)'} · cd ${ABIL[a].cd}s</span><span>${P.slots.map((_,i)=>`<button ${P.slots[i]==a?'disabled':''} onclick="A.sl(${i},'${a}')">→${'JKL'[i]}</button>`).join('')}</span></div>`).join('')+`</div>`}
 const A={y(){},
  eq(k){const s=ITEMS[k].slot;if(ITEMS[k].abil){P.seen[ITEMS[k].abil]=1;P.al[ITEMS[k].abil]=P.al[ITEMS[k].abil]||1}if(P.equip[s])P.inv[P.equip[s]]=(P.inv[P.equip[s]]||0)+1;P.equip[s]=k;P.inv[k]--;{const sa=P.setAbil();if(sa){P.seen[sa]=1;P.al[sa]=P.al[sa]||1}}P.slots=P.slots.map(i=>P.abils().includes(i)?i:'melee');save();menu('equip')},
@@ -659,7 +697,7 @@ const A={y(){},
  us(k){ITEMS[k].use(P);P.inv[k]--;save();menu('items')},
  info(k){const q=$('#inf');q.innerHTML='<div class="p"><h3>'+ITEMS[k].name+'</h3><div style="white-space:pre-line">'+itip(k)+'</div><button class="x" onclick="$(\'#inf\').style.display=\'none\'">Close</button></div>';q.style.display='flex'},
  upg(k,mode){const l=P.up[k]||0;if(l>=10)return;const co=coreOf(k),cost=forgeCost(k,l);
-  ask(`Upgrade ${nm(k)} to +${l+1} for ${mode=='merge'?'1 spare copy':cost.gold+SYM.gold+(co?' + '+nm(co)+' x'+cost.n:'')}?`,()=>{if(mode=='merge'){if(!co&&(P.inv[k]||0)>=1){P.inv[k]--;P.up[k]=l+1;SFX.lvl()}}else if(P.gold>=cost.gold&&(!co||(P.inv[co]||0)>=cost.n)){P.gold-=cost.gold;if(co)P.inv[co]-=cost.n;P.up[k]=l+1;SFX.lvl();say('CLANG! Upgraded to +'+(l+1)+'.')}else say('Not enough gold or boss materials.')})},
+  ask(`Upgrade ${nm(k)} to +${l+1} for ${mode=='merge'?'1 spare copy':cost.gold+SYM.gold+(co?' + '+nm(co)+' x'+cost.n:'')}?`,()=>{if(mode=='merge'){if(!co&&(P.inv[k]||0)>=1&&owned(k)>=2){P.inv[k]--;P.up[k]=l+1;SFX.lvl()}else say('Merging needs a second copy (your last copy is never consumed).')}else if(P.gold>=cost.gold&&(!co||(P.inv[co]||0)>=cost.n)){P.gold-=cost.gold;if(co)P.inv[co]-=cost.n;P.up[k]=l+1;SFX.lvl();say('CLANG! Upgraded to +'+(l+1)+'.')}else say('Not enough gold or boss materials.')})},
  go(i){closeUI();startStage(i,0)},
  pcreate:async function(){if(MP.busy)return;P.nick=(($('#pn')?.value)||'Hero').slice(0,12);MP.busy=1;const b=$('#party-create');if(b)b.disabled=true;try{const code=Math.random().toString(36).slice(2,8);const ok=await mpJoin(code,1);if(!ok)say('Could not create the party. Check your connection and try again.')}catch(e){say('Could not create the party. Please try again.')}finally{MP.busy=0;openParty()}},
  pjoin:async function(){if(MP.busy)return;P.nick=(($('#pn')?.value)||'Hero').slice(0,12);const code=(($('#pc')?.value)||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,8);if(!code){say('Type a party code first!');return}MP.busy=1;const b=$('#party-join');if(b)b.disabled=true;try{const ok=await mpJoin(code);if(!ok)say('Could not join that party. Check the code and connection.')}catch(e){say('Could not join that party. Please try again.')}finally{MP.busy=0;openParty()}},
@@ -673,7 +711,7 @@ const A={y(){},
  dis(k){const it=ITEMS[k],sc=Math.max(1,it.price/30|0),cg=it.price>90?1:0;askQ('Dismantle '+nm(k),P.inv[k],n=>`You get: scrap x${sc*n}${cg?', cog x'+cg*n:''}`,n=>{n=Math.min(n,P.inv[k]);P.inv[k]-=n;P.inv.scrap=(P.inv.scrap||0)+sc*n;if(cg)P.inv.cog=(P.inv.cog||0)+cg*n})}};
 function openForge(){cur=openForge;const own=[...new Set([...Object.values(P.equip),...Object.keys(P.inv).filter(k=>P.inv[k]>0)])].filter(k=>ITEMS[k]&&ITEMS[k].slot&&inSub('forge',k)).sort(byUtil);
  ui(`<div class="p nav"><h3>BLACKSMITH ${SYM.gold} ${P.gold}</h3><small>Upgrade gear (+15% stats per level, max +10) with gold, or merge a spare copy. Boss gear needs its Core + gold.</small> <button class="x" onclick="closeUI()">Leave</button></div><div class="p">${chips('forge')}`+(own.map(k=>{const l=P.up[k]||0,co=coreOf(k),cost=forgeCost(k,l),eq=Object.values(P.equip).includes(k);
-  return `<div class="row"><span>${nm(k)} ${eq?'<small>(equipped)</small>':''} <small>${st(k)}</small></span><span>${l>=10?'MAX':`<button onclick="A.upg('${k}','gold')">+${l+1}: ${cost.gold}${SYM.gold}${co?' + '+ico(co)+'x'+cost.n:''}</button>${!co&&(P.inv[k]||0)>0?`<button onclick="A.upg('${k}','merge')">Merge (1 copy)</button>`:''}`}</span></div>`}).join('')||'No gear to upgrade.')+`</div>`)}
+  return `<div class="row"><span>${nm(k)} ${eq?'<small>(equipped)</small>':''} <small>${st(k)}</small></span><span>${l>=10?'MAX':`<button onclick="A.upg('${k}','gold')">+${l+1}: ${cost.gold}${SYM.gold}${co?' + '+ico(co)+'x'+cost.n:''}</button>${!co&&(P.inv[k]||0)>0&&owned(k)>=2?`<button onclick="A.upg('${k}','merge')">Merge (1 spare copy)</button>`:''}`}</span></div>`}).join('')||'No gear to upgrade.')+`</div>`)}
 let SH=null;
 function openShop(sh,tab='buy'){SH=sh;cur=()=>openShop(sh,tab);const own=Object.keys(P.inv).filter(k=>P.inv[k]>0);
  ui(`<div class="p nav"><h3>SHOP ${SYM.gold} ${P.gold}</h3>${['buy','sell'].map(k=>`<button ${k==tab?'disabled':''} onclick="openShop(SH,'${k}')">${k.toUpperCase()}</button>`).join('')}<button class="x" onclick="closeUI()">Leave</button></div><div class="p">`+
@@ -688,24 +726,6 @@ function newGame(){P=new Player({});closeUI();$('#ui').style.background='';goLob
 function cont(){if(load()){closeUI();$('#ui').style.background='';goLobby()}}
 cv.addEventListener('pointerdown',()=>{if(G=='intro')KP.e=1});
 function loop(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;update(dt);draw();for(const k in KP)delete KP[k];requestAnimationFrame(loop)}
-
-// Keep the 16:9 game canvas fitted to the available viewport, including mobile browser bars.
-(function fitGameCanvas(){
-  const canvas=document.getElementById('g');
-  if(!canvas)return;
-  const fit=()=>{
-    const vw=Math.max(1,window.visualViewport?.width||window.innerWidth||document.documentElement.clientWidth);
-    const vh=Math.max(1,window.visualViewport?.height||window.innerHeight||document.documentElement.clientHeight);
-    const scale=Math.min(vw/16, vh/9);
-    canvas.style.width=Math.floor(16*scale)+'px';
-    canvas.style.height=Math.floor(9*scale)+'px';
-    canvas.style.left='50%'; canvas.style.top='50%';
-  };
-  fit(); window.addEventListener('resize',fit,{passive:true});
-  window.addEventListener('orientationchange',()=>setTimeout(fit,120),{passive:true});
-  window.visualViewport?.addEventListener('resize',fit,{passive:true});
-})();
-
 try{document.fonts.load('20px Anton');document.fonts.load("bold 15px 'Comic Neue'")}catch(e){}
 titleMenu();requestAnimationFrame(loop);
 </script>
